@@ -1355,9 +1355,11 @@ Return<void> RadioImpl::setNetworkSelectionModeManual(int32_t serial,
 #if VDBG
     RLOGD("setNetworkSelectionModeManual: serial %d", serial);
 #endif
-    dispatchString(serial, mSlotId, RIL_REQUEST_SET_NETWORK_SELECTION_MANUAL,
-            operatorNumeric.c_str());
-    return Void();
+std::string opNum = operatorNumeric;
+opNum.append("+");
+dispatchString(serial, mSlotId, RIL_REQUEST_SET_NETWORK_SELECTION_MANUAL,
+        opNum.c_str());
+return Void();
 }
 
 Return<void> RadioImpl::getAvailableNetworks(int32_t serial) {
@@ -4573,7 +4575,8 @@ int radio::getAvailableNetworksResponse(int slotId,
             for (int i = 0, j = 0; i < numStrings; i = i + 4, j++) {
                 networks[j].alphaLong = convertCharPtrToHidlString(resp[i]);
                 networks[j].alphaShort = convertCharPtrToHidlString(resp[i + 1]);
-                networks[j].operatorNumeric = convertCharPtrToHidlString(resp[i + 2]);
+                const char *mccmncIdx = strrchr(resp[i + 2], '+');
+                networks[j].operatorNumeric = hidl_string(resp[i + 2], mccmncIdx - resp[i + 2]);
                 int status = convertOperatorStatusToInt(resp[i + 3]);
                 if (status == -1) {
                     if (e == RIL_E_SUCCESS) responseInfo.error = RadioError::INVALID_RESPONSE;
